@@ -52,6 +52,10 @@ COPY src/server src/server
 # Install dependencies
 RUN npm ci --also=dev
 
+# Migrate and seed
+RUN npm run migrate
+RUN npm run seed
+
 # Build the server
 RUN npm run server:build
 
@@ -91,9 +95,6 @@ RUN npm install -g prisma pm2
 
 # Install production only dependencies
 RUN npm install
-
-# Migrate
-RUN npm run migrate
 
 # Open port 8080
 EXPOSE 8080
