@@ -19,10 +19,8 @@
 
 import { reportRequests } from "@prisma/client";
 import { useQuery } from "react-query";
-import { useParams } from "react-router-dom";
 import { Header, Sidebar } from "../";
 import { fetcher } from "../../data/requests";
-import { ParamTypes } from "../../pages/report";
 import { SidebarProps } from "../Sidebar/Sidebar";
 
 type LayoutProps = {
@@ -34,13 +32,24 @@ export default function Layout({
   children,
   isLoading,
 }: LayoutProps): JSX.Element {
-  const { orgName, projectID } = useParams<ParamTypes>();
-
-  const { data } = useQuery("getProbes", () =>
+  const { data: organizations } = useQuery("getOrganizations", () =>
+    fetcher(`/organizations`, {
+      method: "GET",
+    }),
+  );
+  const { data: projects } = useQuery("getProjects", () =>
+    fetcher(`/projects`, {
+      method: "GET",
+    }),
+  );
+  const { data: probes } = useQuery("getProbes", () =>
     fetcher(`/report-probes`, {
       method: "GET",
     }),
   );
+
+  const orgName = organizations?.data[0]?.name;
+  const projectID = projects?.data[0]?.id;
 
   if (isLoading) {
     return <Content>Loading...</Content>;
@@ -50,7 +59,7 @@ export default function Layout({
     <Content
       orgName={orgName}
       projectID={projectID}
-      endpoints={(data?.data ?? []).map((item: reportRequests) => {
+      endpoints={(probes?.data ?? []).map((item: reportRequests) => {
         return {
           to: `/${orgName}/${projectID}/${item.probeId}/report`,
           title: item.probeName || item.probeId,

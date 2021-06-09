@@ -60,7 +60,7 @@ export const Home: FC = () => {
     if (isNotLoading) {
       const orgName = organizations?.data[0]?.name;
       const projectID = projects?.data[0]?.id;
-      const probeID = probes?.data[0]?.id;
+      const probeID = probes?.data[0]?.probeId;
 
       history.push(`/${orgName}/${projectID}/${probeID}/report`);
     }

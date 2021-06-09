@@ -41,7 +41,9 @@ export const Sidebar: FC<SidebarProps> = ({
   return (
     <aside className="fixed min-h-screen w-64 p-6 pb-24 bg-bw-dark text-white text-lg">
       <div className="w-28 mt-2 mb-8">
-        <Logo transparent />
+        <Link to="/">
+          <Logo transparent />
+        </Link>
       </div>
       <SidebarGroup title="Probes">
         {endpoints?.map(endpoint => (
