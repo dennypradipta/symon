@@ -19,6 +19,9 @@
 
 import React from "react";
 import { Redirect, Route, RouteProps } from "react-router-dom";
+import Storage from "../utils/storage";
+
+const storage = new Storage();
 
 interface Props extends RouteProps {
   component: React.FC;
@@ -28,7 +31,7 @@ const ProtectedRoute: React.FC<Props> = ({
   component: Component,
   ...restOfProps
 }) => {
-  const isAuthenticated = window.localStorage.getItem("at") || "";
+  const isAuthenticated = storage.get("at") || "";
 
   return (
     <Route

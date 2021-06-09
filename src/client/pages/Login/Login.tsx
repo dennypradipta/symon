@@ -26,6 +26,9 @@ import Header from "../../components/Header";
 import Input from "../../components/Input";
 import { fetcher } from "../../data/requests";
 import { useLogin } from "../../data/user";
+import Storage from "../../utils/storage";
+
+const storage = new Storage();
 
 export const Login: FC = () => {
   const history = useHistory();
@@ -46,9 +49,9 @@ export const Login: FC = () => {
   );
 
   useEffect(() => {
-    const rememberMeStoredValue = window.localStorage.getItem("rememberMe");
+    const rememberMeStoredValue = storage.get("rememberMe");
     const remember = rememberMeStoredValue === "true" ? true : false;
-    const accessToken = window.localStorage.getItem("at");
+    const accessToken = storage.get("at");
 
     if (remember && !!accessToken) {
       history.replace("/");
@@ -196,7 +199,7 @@ export const LoginView: FC<LoginViewProps> = ({
                   checked={data.remember}
                   onChange={e => {
                     const isChecked = e.target.checked;
-                    window.localStorage.setItem(
+                    storage.set(
                       "rememberMe",
                       isChecked === true ? "true" : "false",
                     );

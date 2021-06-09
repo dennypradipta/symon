@@ -17,7 +17,6 @@
  *                                                                                *
  **********************************************************************************/
 
-import bodyParser from "body-parser";
 import express from "express";
 import request from "supertest";
 import errorHandler from "../../../internal/middleware/error-handler";
@@ -35,7 +34,7 @@ let configs: Config[] = [
 describe("Location Service", () => {
   // arrange
   const app = express();
-  app.use(bodyParser.json());
+  app.use(express.json());
   app.use(config);
   app.use(errorHandler());
 

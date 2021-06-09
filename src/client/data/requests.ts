@@ -17,40 +17,92 @@
  *                                                                                *
  **********************************************************************************/
 
+import axios, { AxiosRequestConfig } from "axios";
 import { cfg } from "../config";
 import { getSavedTokens } from "./user";
+import Storage from "../utils/storage";
 
 const apiURL = cfg.apiUrl;
 const apiPrefix = cfg.apiPrefix;
 const baseURL = apiURL + apiPrefix;
 
+const baseConfig = {
+  baseURL,
+  timeout: 30000, // 30 seconds
+};
+const axiosBaseInstance = axios.create(baseConfig);
+const axiosWithTokenInstance = axios.create(baseConfig);
+
+// Response interceptor for API calls
+axiosWithTokenInstance.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    if (error.response.status === 401 && !originalRequest._retry) {
+      const storage = new Storage();
+      originalRequest._retry = true;
+
+      // refresh access token
+      const refreshToken = storage.get("rt");
+      try {
+        const resp = await refreshAccessToken(refreshToken ?? "");
+        const accessToken = resp?.data?.data?.accessToken;
+
+        // store access token
+        storage.set("at", accessToken);
+        // change token in header
+        originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
+        return axiosWithTokenInstance(originalRequest);
+      } catch (error) {
+        // remove access token, refresh token and reload when refresh token is expired
+        storage.del("at");
+        storage.del("rt");
+        window.location.reload();
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+async function refreshAccessToken(refreshToken: string) {
+  const config = {
+    method: "POST",
+    url: "/refresh",
+    headers: { "Content-Type": "application/json" },
+    data: JSON.stringify({
+      refreshToken,
+    }),
+  } as AxiosRequestConfig;
+  const res = await axiosBaseInstance(config);
+
+  return res;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const fetcher = async <T = any>(
+export const fetcher = async (
   path: string,
   option: {
     body?: unknown;
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   },
-): Promise<T> => {
+): Promise<any> => {
   const { body, method } = option;
   const { accessToken } = getSavedTokens();
 
-  const response = await fetch(`${baseURL}${path}`, {
-    method: method,
+  const config = {
+    method,
+    url: path,
     headers: {
       "Content-type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: body ? JSON.stringify(body) : null,
-  });
+    data: body ? JSON.stringify(body) : null,
+  };
+  const response = await axiosWithTokenInstance(config);
 
-  const jsonResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(jsonResponse.message);
-  }
-
-  return jsonResponse;
+  return response?.data;
 };
 
 export const post = <T>(
@@ -58,4 +110,4 @@ export const post = <T>(
   option: {
     body: unknown;
   },
-): Promise<T> => fetcher<T>(path, { ...option, method: "POST" });
+): Promise<T> => fetcher(path, { ...option, method: "POST" });

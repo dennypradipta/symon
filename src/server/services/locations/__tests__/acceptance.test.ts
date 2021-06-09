@@ -17,7 +17,6 @@
  *                                                                                *
  **********************************************************************************/
 
-import bodyParser from "body-parser";
 import express from "express";
 import request from "supertest";
 import faker from "faker";
@@ -42,7 +41,7 @@ let locations: Location[] = [
 describe("Location Service", () => {
   // arrange
   const app = express();
-  app.use(bodyParser.json());
+  app.use(express.json());
   app.use(location);
   app.use(errorHandler());
 

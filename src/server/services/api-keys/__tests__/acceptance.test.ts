@@ -18,7 +18,6 @@
  **********************************************************************************/
 
 import { apiKey } from "@prisma/client";
-import bodyParser from "body-parser";
 import express from "express";
 import faker from "faker";
 import request from "supertest";
@@ -63,7 +62,7 @@ const mockDeleteByID = jest.fn();
 describe("API Key Service", () => {
   // arrange
   const app = express();
-  app.use(bodyParser.json());
+  app.use(express.json());
   app.use(apiKeyService);
   app.use(errorHandler());
 

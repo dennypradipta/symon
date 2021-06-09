@@ -20,6 +20,9 @@
 import { useMutation, UseMutationResult } from "react-query";
 
 import { post } from "./requests";
+import Storage from "../utils/storage";
+
+const storage = new Storage();
 
 type UseLoginData = {
   result: string;
@@ -55,13 +58,13 @@ export const setToken = (data: {
   const { accessToken, refreshToken } = data;
 
   if (accessToken) {
-    window.localStorage.setItem("at", accessToken);
+    storage.set("at", accessToken);
     if (refreshToken) {
-      window.localStorage.setItem("rt", refreshToken);
+      storage.set("rt", refreshToken);
     }
   } else {
-    window.localStorage.removeItem("at");
-    window.localStorage.removeItem("rt");
+    storage.del("at");
+    storage.del("rt");
   }
 };
 
@@ -70,7 +73,7 @@ export const getSavedTokens = (): {
   refreshToken: string;
 } => {
   return {
-    accessToken: window.localStorage.getItem("at") || "",
-    refreshToken: window.localStorage.getItem("rt") || "",
+    accessToken: storage.get("at") || "",
+    refreshToken: storage.get("rt") || "",
   };
 };

@@ -26,7 +26,6 @@ import { cfg } from "../config";
 import * as http from "http";
 
 import { requestLogger, logger } from "./internal/logger";
-import bodyParser = require("body-parser");
 import errorHandler from "./internal/middleware/error-handler";
 import notFound from "./internal/middleware/not-found";
 import router from "./router";
@@ -35,8 +34,8 @@ const app: express.Application = express();
 const port = cfg.port || 8080;
 
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

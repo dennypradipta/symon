@@ -17,7 +17,6 @@
  *                                                                                *
  **********************************************************************************/
 
-import bodyParser from "body-parser";
 import express from "express";
 import faker from "faker";
 import request from "supertest";
@@ -38,7 +37,7 @@ let projects: Project[] = [
 describe("Project Service", () => {
   const app = express();
 
-  app.use(bodyParser.json());
+  app.use(express.json());
   app.use(project);
   app.use(errorHandler());
 

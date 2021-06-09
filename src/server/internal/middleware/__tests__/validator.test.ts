@@ -18,7 +18,6 @@
  **********************************************************************************/
 
 import express, { Request, Response, NextFunction } from "express";
-import bodyParser from "body-parser";
 import Joi from "joi";
 import faker from "faker";
 import request from "supertest";
@@ -35,7 +34,7 @@ describe("Validator middleware", () => {
     // arrange
     const app = express();
 
-    app.use(bodyParser.json());
+    app.use(express.json());
     app.get("/v1/users", validate(schema), (_, res) => {
       res.sendStatus(200);
     });
@@ -54,7 +53,7 @@ describe("Validator middleware", () => {
     // arrange
     const app = express();
 
-    app.use(bodyParser.json());
+    app.use(express.json());
     app.get("/v1/users", validate(schema), (_, res) => {
       res.sendStatus(200);
     });
