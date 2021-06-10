@@ -17,18 +17,18 @@ Below are the things you need to prepare for Dokku Deployment:
 
 1.  Clone the Repository
 
-        First, you must clone the Symon repository to your local computer. This is required as we have not published our images in Docker Hub at the moment.
+    First, you must clone the Symon repository to your local computer in order to do Git deployments or building image from source. If you're using the 'Deploying from a Docker Registry', it is not required.
 
 2.  Install Dokku
 
-        Login to your server, and type these commands in server's terminal to install Dokku:
+    Login to your server, and type these commands in server's terminal to install Dokku:
 
-        ```
-        wget https://raw.githubusercontent.com/dokku/dokku/v0.24.10/bootstrap.sh;
-        sudo DOKKU_TAG=v0.24.10 bash bootstrap.sh
-        ```
+    ```
+    wget https://raw.githubusercontent.com/dokku/dokku/v0.24.10/bootstrap.sh;
+    sudo DOKKU_TAG=v0.24.10 bash bootstrap.sh
+    ```
 
-        The installation process takes about 5-10 minutes, depending upon internet connection speed.
+    The installation process takes about 5-10 minutes, depending upon internet connection speed.
 
 3.  Setup SSH key and Virtualhost Settings
 
@@ -74,7 +74,7 @@ Below are the things you need to prepare for Dokku Deployment:
 
 7.  Deploy the app!
 
-    There are two ways to do deployment: Git and Docker Image deployment.
+    There are two ways to do deployment: Git and Docker deployment.
 
     a. Git Deployment
 
@@ -89,41 +89,68 @@ Below are the things you need to prepare for Dokku Deployment:
 
     Now, you can deploy your `api` app by using `git push dokku-api main:master` or `git push dokku-frontend main:master` to deploy `frontend`.
 
-    b. Docker Image Deployment
+    b. Docker Deployment
 
-    In your cloned Symon directory, you need to build the Docker image. Build the docker image using the command below:
+    - Deploying from a Docker Registry
 
-    ```
-    # Note: The image must be tagged `dokku/<app-name>:<version>`
-    # Build the API
-    docker build --build-arg NODE_ENV=production \
-        --build-arg PORT=8080 \
-        --build-arg DATABASE_URL="file:./dev.db" \
-        --build-arg JWT_SECRET="thisIsJwtSecret" \
-        --build-arg JWT_ISSUER="admin@kaksymon.com" \
-        --build-arg JWT_ACCESS_EXPIRED=5m \
-        --build-arg JWT_REFRESH_EXPIRED=1y \
-        --build-arg JWT_ALGORITHM=HS256 \
-        -f Dockerfile.server . -t dokku/api:latest
+      In your server's terminal, pull the Symon both frontend and api images:
 
-    # Build the Frontend
-    docker build --build-arg NODE_ENV=production \
-        --build-arg DATABASE_URL="file:./dev.db" \
-        --build-arg REACT_APP_API_URL=http://localhost:8080 \
-        --build-arg REACT_APP_API_PREFIX=/v1 \
-        -f Dockerfile.client . -t dokku/frontend:latest
-    ```
+      ```
+      docker pull hyperjumptech/symon-api:latest
+      docker pull hyperjumptech/symon-frontend:latest
+      ```
 
-    You may refer to the .env.example for setting up the environment variables above, and change the enviroment variables according to your needs.
+      Now that we have pulled the latest image for both `api` and `frontend`, we need to retag the pulled image using the commands below:
 
-    After building the image, deploy the image using the command below:
+      ```
+      docker tag hyperjumptech/symon-api:latest dokku/api:latest
+      docker tag hyperjumptech/symon-frontend:latest dokku/frontend:latest
+      ```
 
-    ```
-    # Copy the image, tag, and deploy the API
-    docker save dokku/api:latest | bzip2 | ssh <your_server_domain_or_ip_address> "bunzip2 | docker load"
-    ssh <your_server_domain_or_ip_address> "dokku tags:create api previous; dokku tags:deploy api latest"
+      After retagging, we could deploy the `api` and `frontend` using the commands below:
 
-    # Copy the image, tag, and deploy the Frontend
-    docker save dokku/api:latest | bzip2 | ssh <your_server_domain_or_ip_address> "bunzip2 | docker load"
-    ssh <your_server_domain_or_ip_address> "dokku tags:create api previous; dokku tags:deploy api latest"
-    ```
+      ```
+      dokku tags:deploy api latest
+      dokku tags:deploy frontend latest
+      ```
+
+    - Deploying by building from local image
+
+      In your cloned Symon directory, you need to build the Docker image. Build the docker image using the command below:
+
+      ```
+      # Note: The image must be tagged `dokku/<app-name>:<version>`
+      # Build the API
+      docker build --build-arg NODE_ENV=production \
+          --build-arg PORT=8080 \
+          --build-arg DATABASE_URL="file:./dev.db" \
+          --build-arg JWT_SECRET="thisIsJwtSecret" \
+          --build-arg JWT_ISSUER="admin@kaksymon.com" \
+          --build-arg JWT_ACCESS_EXPIRED=5m \
+          --build-arg JWT_REFRESH_EXPIRED=1y \
+          --build-arg JWT_ALGORITHM=HS256 \
+          -f Dockerfile.server . -t dokku/api:latest
+
+      # Build the Frontend
+      docker build --build-arg NODE_ENV=production \
+          --build-arg DATABASE_URL="file:./dev.db" \
+          --build-arg REACT_APP_API_URL=http://localhost:8080 \
+          --build-arg REACT_APP_API_PREFIX=/v1 \
+          -f Dockerfile.client . -t dokku/frontend:latest
+      ```
+
+      You may refer to the .env.example for setting up the environment variables above, and change the enviroment variables according to your needs.
+
+      After building the image, deploy the image using the command below:
+
+      ```
+      # Copy the image, tag, and deploy the API
+      docker save dokku/api:latest | bzip2 | ssh <your_server_domain_or_ip_address> "bunzip2 | docker load"
+      ssh <your_server_domain_or_ip_address> "dokku tags:create api previous; dokku tags:deploy api latest"
+
+      # Copy the image, tag, and deploy the Frontend
+      docker save dokku/api:latest | bzip2 | ssh <your_server_domain_or_ip_address> "bunzip2 | docker load"
+      ssh <your_server_domain_or_ip_address> "dokku tags:create api previous; dokku tags:deploy api latest"
+      ```
+
+      You could do the same process for CI process too by setting the ENV from the Secrets.
