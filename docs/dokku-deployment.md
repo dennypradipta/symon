@@ -47,6 +47,8 @@ Below are the things you need to prepare for Dokku Deployment:
 
 5.  Set the Corresponding Dockerfile for Each App using Docker Options
 
+    **NOTE: If you're going to deploy the app using the "Deploying from a Docker Registry" method, you may skip this step.**
+
     In order to tell Dokku which Dockerfile we need to use when deploying an app, we need to set the corresponding Dockerfile for each app using Dokku Docker options. Run these commands below in the server's terminal:
 
     ```
