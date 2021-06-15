@@ -85,6 +85,168 @@ describe("Query helper", () => {
     expect(prismaArguments).toStrictEqual(expectedResult);
   });
 
+  describe("should generate filter arguments with certain types", () => {
+    it("such as null and undefined values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              flag: {
+                equals: null,
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "flag equals null",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+    it("such as boolean values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              true: {
+                equals: true,
+              },
+            },
+            {
+              false: {
+                equals: false,
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "true equals true and false equals false",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+
+    it("such as number values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              count: {
+                equals: 123,
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "count equals 123",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+
+    it("such as string values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              name: {
+                equals: "symon",
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "name equals symon",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+
+    it("such as UUID values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              uuid: {
+                equals: "11f12dd6-b63e-425f-b11f-5a996b5866cf",
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "uuid equals 11f12dd6-b63e-425f-b11f-5a996b5866cf",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+
+    it("such as string but contain boolean values", async () => {
+      // arrange
+      const expectedResult = {
+        where: {
+          AND: [
+            {
+              name: {
+                equals: "truedy",
+              },
+            },
+          ],
+        },
+        take: 10,
+      };
+
+      // act
+      const prismaArguments = generatePrismaArguments({
+        queryArgs: {
+          filter: "name equals truedy",
+        },
+      });
+
+      // assert
+      expect(prismaArguments).toStrictEqual(expectedResult);
+    });
+  });
+
   it("should generate arguments with nested object filter", async () => {
     // arrange
     const expectedResult = {
