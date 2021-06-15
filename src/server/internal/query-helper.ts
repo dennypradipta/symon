@@ -211,18 +211,13 @@ function generateFilter(where?: string) {
 }
 
 function transformFilterValue(value: string) {
-  const isBool = value === "true" || value === "false";
-  const integerValue = parseInt(value, 10);
-  const isInteger = !isNaN(integerValue);
-
-  if (isBool) {
-    return value === "true" ? true : false;
-  }
-  if (isInteger) {
-    return integerValue;
-  }
-
-  return value;
+  // Test the value using regex
+  // First test if there is a boolean/null
+  // If the value is not boolean/null, parse it as a number
+  // If it's not a number, then parse it as string
+  return /^(true|false|null)$/.test(value)
+    ? JSON.parse(value)
+    : Number(value) || value;
 }
 
 // simplified from https://github.com/ljharb/qs/blob/master/lib/parse.js
