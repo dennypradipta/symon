@@ -140,11 +140,10 @@ export async function update(
   const id = req.params.id
     ? parseInt(req.params.id, 10)
     : (req.user as user)?.id;
-  const { email, password } = req.body;
+  const { password } = req.body;
 
   try {
     const data = await repository.update(id, {
-      email,
       password,
     });
 

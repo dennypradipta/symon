@@ -23,6 +23,6 @@ export type UserCreate = Omit<user, "id" | "password_hash"> & {
   password: string;
 };
 
-export type UserUpdate = Pick<user, "email"> & {
+export type UserUpdate = {
   password: string;
 };

@@ -17,34 +17,30 @@
  *                                                                                *
  **********************************************************************************/
 
-import express from "express";
-import validate from "../../internal/middleware/validator";
-import { createSchemaValidator } from "../users/validator";
-import {
-  login,
-  refresh,
-  checkHasUser,
-  createFirstUser,
-  changePassword,
-} from "./controller";
-import authMiddleware from "./middleware";
-import {
-  loginRequesBodytValidator,
-  refreshRequestBodyValidator,
-  changePasswordValidator,
-} from "./validator";
+import { hash, verify } from "../password-hash";
 
-const router = express.Router();
+describe("Password hash", () => {
+  it("should match", async () => {
+    // arrange
+    const plainTextPassword = "example-password";
+    const hashedPassword = await hash(plainTextPassword);
 
-router.get("/v1/auth/check-users", checkHasUser);
-router.post("/v1/auth", validate(loginRequesBodytValidator), login);
-router.post("/v1/auth/user", validate(createSchemaValidator), createFirstUser);
-router.post("/v1/refresh", validate(refreshRequestBodyValidator), refresh);
-router.put(
-  "/v1/auth/change-password",
-  authMiddleware,
-  validate(changePasswordValidator),
-  changePassword,
-);
+    // act
+    const isVerified = await verify(hashedPassword, plainTextPassword);
 
-export default router;
+    // assert
+    expect(isVerified).toBe(true);
+  });
+
+  it("should  not match", async () => {
+    // arrange
+    const plainTextPassword = "example-password";
+    const hashedPassword = await hash(plainTextPassword);
+
+    // act
+    const isVerified = await verify(hashedPassword, "different password");
+
+    // assert
+    expect(isVerified).toBe(false);
+  });
+});

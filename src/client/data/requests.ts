@@ -30,6 +30,7 @@ const baseURL = apiURL + apiPrefix;
 const baseConfig = {
   baseURL,
   timeout: 30000, // 30 seconds
+  validateStatus: (status: number) => status >= 200 && status < 500,
 };
 const axiosBaseInstance = axios.create(baseConfig);
 const axiosWithTokenInstance = axios.create(baseConfig);
@@ -100,6 +101,9 @@ export const fetcher = async (
     data: body ? JSON.stringify(body) : null,
   };
   const response = await axiosWithTokenInstance(config);
+  if (response.status >= 300) {
+    throw new Error(response?.data?.message);
+  }
 
   return response?.data;
 };

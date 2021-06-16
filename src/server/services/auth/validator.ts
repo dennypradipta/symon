@@ -27,3 +27,12 @@ export const loginRequesBodytValidator = Joi.object().keys({
 export const refreshRequestBodyValidator = Joi.object().keys({
   refreshToken: Joi.string().required(),
 });
+
+export const changePasswordValidator = Joi.object().keys({
+  oldPassword: Joi.string().required().label("Old password"),
+  newPassword: Joi.string().required().min(5).label("New password"),
+  confirmPassword: Joi.string()
+    .required()
+    .min(5)
+    .label("Password confirmation"),
+});

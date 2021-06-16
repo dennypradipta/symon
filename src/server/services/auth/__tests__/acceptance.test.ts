@@ -17,7 +17,7 @@
  *                                                                                *
  **********************************************************************************/
 
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 
@@ -26,8 +26,20 @@ import { user } from "@prisma/client";
 import { cfg } from "../../../../config/index";
 import { setupPassport } from "../../../config/passport";
 import errorHandler from "../../../internal/middleware/error-handler";
+import { verify } from "../../../internal/password-hash";
 import { UserRepository } from "../../users/repository";
 import auth from "../index";
+import authMiddleware from "../middleware";
+
+jest.mock("../middleware");
+jest.mock("../../../internal/password-hash");
+
+(authMiddleware as jest.Mock).mockImplementation(
+  (req: Request, _: Response, next: NextFunction) => {
+    req.user = { id: 1 };
+    next();
+  },
+);
 
 const users: user[] = [
   {
@@ -307,6 +319,103 @@ describe("Auth Service", () => {
 
       // assert
       expect(res.status).toBe(401);
+      done();
+    });
+  });
+
+  describe("PUT /v1/auth/change-password", () => {
+    it("should return 422 if password confirmation does not match", async done => {
+      // arrange
+      const body = {
+        oldPassword: "password",
+        newPassword: "new-password",
+        confirmPassword: "wrong-new-password",
+      };
+
+      // act
+      const res = await request(app).put("/v1/auth/change-password").send(body);
+
+      // assert
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("Confirmation password does not match");
+      done();
+    });
+
+    it("should return 404 if the user is not found", async done => {
+      // arrange
+      UserRepository.prototype.findOneByID = async () => null;
+      const body = {
+        oldPassword: "password",
+        newPassword: "new-password",
+        confirmPassword: "new-password",
+      };
+
+      // act
+      const res = await request(app).put("/v1/auth/change-password").send(body);
+
+      // assert
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe("User is not found");
+      done();
+    });
+
+    it("should return 400 if the user input wrong old password", async done => {
+      // arrange
+      UserRepository.prototype.findOneByID = async () => users[0];
+      (verify as jest.Mock).mockImplementationOnce(() => false);
+      const body = {
+        oldPassword: "password",
+        newPassword: "new-password",
+        confirmPassword: "new-password",
+      };
+
+      // act
+      const res = await request(app).put("/v1/auth/change-password").send(body);
+
+      // assert
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("Old password is not valid");
+      done();
+    });
+
+    it("return 422 if failed to update password", async done => {
+      // arrange
+      UserRepository.prototype.findOneByID = async () => users[0];
+      (verify as jest.Mock).mockImplementationOnce(() => true);
+      UserRepository.prototype.update = async () => {
+        throw new Error("Failed to update user");
+      };
+      const body = {
+        oldPassword: "password",
+        newPassword: "new-password",
+        confirmPassword: "new-password",
+      };
+
+      // act
+      const res = await request(app).put("/v1/auth/change-password").send(body);
+
+      // assert
+      expect(res.status).toBe(422);
+      done();
+    });
+
+    it("success", async done => {
+      // arrange
+      UserRepository.prototype.findOneByID = async () => users[0];
+      (verify as jest.Mock).mockImplementationOnce(() => true);
+      UserRepository.prototype.update = async () => users[0];
+      const body = {
+        oldPassword: "password",
+        newPassword: "new-password",
+        confirmPassword: "new-password",
+      };
+
+      // act
+      const res = await request(app).put("/v1/auth/change-password").send(body);
+
+      // assert
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("Your password has been updated");
       done();
     });
   });

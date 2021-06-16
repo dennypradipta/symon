@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from "uuid";
 import { cfg } from "../../../config/index";
 import { setupPassport } from "../../config/passport";
 import { AppError, commonHTTPErrors } from "../../internal/app-error";
+import { verify } from "../../internal/password-hash";
 import { UserRepository } from "../users/repository";
 
 const JWT_SECRET = cfg.jwtSecret;
@@ -32,6 +33,14 @@ const JWT_ISSUER = cfg.jwtIssuer;
 const JWT_ACCESS_EXPIRED = cfg.jwtAccessExpired;
 const JWT_REFRESH_EXPIRED = cfg.jwtRefreshExpired;
 const JWT_ALGORITHM = cfg.jwtAlgorithm;
+
+type requestUser = {
+  id: number;
+  email: string;
+  password_hash: string;
+  enabled: number;
+  suspended: number;
+};
 
 const repo = new UserRepository();
 
@@ -170,6 +179,74 @@ export async function refresh(
     const error = new AppError(
       commonHTTPErrors.notAuthenticated,
       "Invalid refresh token",
+      true,
+    );
+
+    next(error);
+  }
+}
+
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const { body, user } = req;
+  const { oldPassword, newPassword, confirmPassword } = body;
+  const { id } = user as requestUser;
+
+  try {
+    // check if the new password and confirmation password is match
+    if (newPassword !== confirmPassword) {
+      const error = new AppError(
+        commonHTTPErrors.badRequest,
+        "Confirmation password does not match",
+        true,
+      );
+
+      next(error);
+      return;
+    }
+
+    // get current password
+    const currentUserData = await repo.findOneByID(id);
+    if (!currentUserData) {
+      const error = new AppError(
+        commonHTTPErrors.notFound,
+        "User is not found",
+        true,
+      );
+
+      next(error);
+      return;
+    }
+    // check if the password is valid
+    const isPasswordValid = await verify(
+      currentUserData?.password_hash ?? "",
+      oldPassword,
+    );
+    if (!isPasswordValid) {
+      const error = new AppError(
+        commonHTTPErrors.badRequest,
+        "Old password is not valid",
+        true,
+      );
+
+      next(error);
+      return;
+    }
+
+    // update password
+    await repo.update(id, { password: newPassword });
+
+    res.status(200).send({
+      result: "SUCCESS",
+      message: "Your password has been updated",
+    });
+  } catch (err) {
+    const error = new AppError(
+      commonHTTPErrors.unprocessableEntity,
+      err.message,
       true,
     );
 

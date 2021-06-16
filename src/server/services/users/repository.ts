@@ -56,7 +56,7 @@ export class UserRepository {
     return data;
   }
 
-  async findOneByID(id: number): Promise<UserResponse | null> {
+  async findOneByID(id: number): Promise<user | null> {
     const data = await Prisma.user.findUnique({
       select: this.selectedFields,
       where: { id },
