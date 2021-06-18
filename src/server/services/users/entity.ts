@@ -26,3 +26,5 @@ export type UserCreate = Omit<user, "id" | "password_hash"> & {
 export type UserUpdate = {
   password: string;
 };
+
+export type UserUpsert = Omit<user, "id">;
