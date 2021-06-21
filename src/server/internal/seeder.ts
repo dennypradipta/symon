@@ -17,12 +17,32 @@
  *                                                                                *
  **********************************************************************************/
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { ProjectRepository } from "./../services/projects/repository";
+import { OrganizationRepository } from "./../services/organizations/repository";
+import { UserRepository } from "./../services/users/repository";
+import {
+  MonikaRepository,
+  ReportRepository,
+} from "./../services/monika/repository";
+import { ProbeRepository } from "../services/probes/repository";
+import { ReportRequestRepository } from "./../services/report-requests/repository";
+import { ConfigRepository } from "./../services/config/repository";
+import { ReportRequestAlertRepository } from "../services/report-alerts/repository";
+import { ReportNotificationRepository } from "./../services/report-alerts/repository";
 
 export default async function seed(): Promise<void> {
-  await prisma.user.upsert({
+  const user = new UserRepository();
+  const organization = new OrganizationRepository();
+  const project = new ProjectRepository();
+  const probe = new ProbeRepository();
+  const monika = new MonikaRepository();
+  const report = new ReportRepository();
+  const reportRequest = new ReportRequestRepository();
+  const reportRequestAlerts = new ReportRequestAlertRepository();
+  const reportNotifications = new ReportNotificationRepository();
+  const config = new ConfigRepository();
+
+  await user.upsert({
     where: { email: "admin@symon.org" },
     update: {},
     create: {
@@ -34,112 +54,116 @@ export default async function seed(): Promise<void> {
     },
   });
 
-  await prisma.organization.create({
+  await organization.create({
+    name: "hyperjump",
+    description: "Open source first. Cloud native. DevOps excellence.",
+  });
+
+  await project.create({
+    name: "hyperjump",
+    organization_id: 1,
+  });
+
+  await probe.create({
+    name: "sample-probe",
+    description: "sample-probe",
+    alerts: null,
+    interval: null,
+    incidentThreshold: null,
+    recoveryThreshold: null,
+    enabled: null,
+    requests: [],
+  });
+
+  await monika.create({
+    hostname: "example.com",
+    instanceId: "southeast-asia-1",
+  });
+
+  await report.create({
+    monikaId: 1,
+    configVersion: "1.0.0",
+    monikaInstanceId: "southeast-asia-1",
     data: {
-      name: "hyperjump",
-      description: "Open source first. Cloud native. DevOps excellence.",
+      requests: [],
+      notifications: [],
     },
   });
 
-  await prisma.project.create({
-    data: {
-      name: "hyperjump",
-      organization_id: 1,
-    },
-  });
-
-  await prisma.probe.create({
-    data: {
-      name: "sample-probe",
-      createdAt: 0,
-      updatedAt: 0,
-    },
-  });
-
-  await prisma.monika.create({
-    data: {
-      hostname: "example.com",
-      instanceId: "southeast-asia-1",
-    },
-  });
-
-  await prisma.report.create({
-    data: {
-      monikaId: 1,
-      configVersion: "1.0.0",
-      monikaInstanceId: "southeast-asia-1",
-    },
-  });
-
-  await prisma.probeRequest.create({
-    data: {
-      url: "http://example.com",
-      createdAt: 0,
-      updatedAt: 0,
-    },
+  await probe.createProbeRequest({
+    probeId: 1,
+    method: "GET",
+    timeout: 10000,
+    headers: null,
+    body: null,
+    url: "http://example.com",
   });
 
   const reportRequestsSeed = [];
   for (let i = 0; i < 35; i++) {
-    reportRequestsSeed[i] = prisma.reportRequests.create({
-      data: {
-        reportId: 1,
-        probeId: "sample-probe",
-        requestMethod: "GET",
-        requestUrl: "https://example.com",
-        timestamp: 0,
-        responseStatus: 200,
-        responseTime: 3,
-      },
+    reportRequestsSeed[i] = reportRequest.create({
+      reportId: 1,
+      probeId: "sample-probe",
+      probeName: "sample-probe",
+      requestMethod: "GET",
+      requestHeader: null,
+      requestBody: null,
+      requestUrl: "https://example.com",
+      timestamp: 0,
+      responseStatus: 200,
+      responseHeader: null,
+      responseBody: null,
+      responseTime: 3,
+      responseSize: null,
     });
   }
   await Promise.all(reportRequestsSeed);
 
   const reportRequestsAlertsSeed = [];
   for (let i = 0; i < 35; i++) {
-    reportRequestsAlertsSeed[i] = prisma.reportRequestAlerts.create({
-      data: {
-        reportRequestId: 1,
-        alert: "response-time-greater-than-2-s",
-      },
+    reportRequestsAlertsSeed[i] = reportRequestAlerts.create({
+      reportRequestId: 1,
+      alert: "response-time-greater-than-2-s",
     });
   }
   await Promise.all(reportRequestsAlertsSeed);
 
   const reportNotificationsSeed = [];
   for (let i = 0; i < 35; i++) {
-    reportNotificationsSeed[i] = prisma.reportNotifications.create({
-      data: {
-        timestamp: 0,
-        type: i % 2 === 0 ? "NOTIFY-INCIDENT" : "NOTIFY-RECOVERY",
-        alert: "response-time-greater-than-2-s",
-        reportId: 1,
-        probeId: "sample-probe",
-        notificationId: "sample-notification",
-        channel: "slack",
-      },
+    reportNotificationsSeed[i] = reportNotifications.create({
+      probeName: "sample-probe",
+      timestamp: 0,
+      type: i % 2 === 0 ? "NOTIFY-INCIDENT" : "NOTIFY-RECOVERY",
+      alert: "response-time-greater-than-2-s",
+      reportId: 1,
+      probeId: "sample-probe",
+      notificationId: "sample-notification",
+      channel: "slack",
     });
   }
   await Promise.all(reportNotificationsSeed);
 
   const configs = [
-    { key: "env", value: "development" },
-    { key: "jwtSecret", value: "8080" },
-    { key: "dbHost", value: "file:./dev.db" },
-    { key: "jwtSecret", value: "thisIsJwtSecret" },
-    { key: "jwtIssuer", value: "symon.org" },
-    { key: "jwtAccessExpired", value: "5m" },
-    { key: "jwtRefreshExpired", value: "1y" },
-    { key: "jwtAlgorithm", value: "HS256" },
+    { key: "env", value: process.env.NODE_ENV || "development" },
+    { key: "jwtSecret", value: process.env.PORT || "8080" },
+    { key: "dbHost", value: process.env.DATABASE_URL || "file:./dev.db" },
+    { key: "jwtSecret", value: process.env.JWT_SECRET || "thisIsJwtSecret" },
+    { key: "jwtIssuer", value: process.env.JWT_ISSUER || "symon.org" },
+    { key: "jwtAccessExpired", value: process.env.JWT_ACCESS_EXPIRED || "5m" },
+    {
+      key: "jwtRefreshExpired",
+      value: process.env.JWT_REFRESH_EXPIRED || "1y",
+    },
+    { key: "jwtAlgorithm", value: process.env.JWT_ALGORITHM || "HS256" },
   ];
 
-  configs.map(async config => {
-    await prisma.config.upsert({
-      where: { key: config.key },
+  configs.map(async c => {
+    await config.upsert({
+      where: { key: c.key },
       update: {},
       create: {
-        key: config.key,
-        value: config.value,
+        key: c.key,
+        value: c.value,
       },
     });
   });

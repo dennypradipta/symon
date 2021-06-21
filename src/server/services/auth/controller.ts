@@ -56,15 +56,21 @@ export async function checkHasUser(
     const data = await repo.findMany({ offset: 0, size: 10, order: "asc" });
 
     // Check if there is a user
-    if (data.length > 0) {
+    if (data.length < 1) {
+      // Run seeder
+      await seed();
+
+      res.status(200).send({
+        result: "SUCCESS",
+        message: "Successfully seeded users",
+        hasUser: true,
+      });
+    } else {
       res.status(200).send({
         result: "SUCCESS",
         message: "Successfully get users",
         hasUser: true,
       });
-    } else {
-      // Run seeder
-      await seed();
     }
   } catch (err) {
     const error = new AppError(
