@@ -17,72 +17,8 @@
  *                                                                                *
  **********************************************************************************/
 
-import { Config, SearchParams } from "./entity";
-import Prisma from "../../prisma/prisma-client";
+import { reportRequestAlerts, reportNotifications } from "@prisma/client";
 
-export class ConfigRepository {
-  async findMany(params: SearchParams): Promise<Config[]> {
-    const size = parseInt(params.size, 10);
-    const offset = parseInt(params.offset, 10);
-    const data = await Prisma.config.findMany({
-      where: {
-        key: params.key,
-        value: params.value,
-      },
-      take: size,
-      skip: offset,
-    });
-    return data;
-  }
+export type ReportRequestAlertCreate = Omit<reportRequestAlerts, "id">;
 
-  async findById(key: string): Promise<Config | null> {
-    const data = await Prisma.config.findUnique({
-      where: { key },
-    });
-
-    return data;
-  }
-
-  async create(config: Config): Promise<Config> {
-    const data = await Prisma.config.create({
-      data: config,
-    });
-
-    return data;
-  }
-
-  async update(config: Config): Promise<Config> {
-    const { key, ...newData } = config;
-    const data = await Prisma.config.update({
-      where: { key },
-      data: newData,
-    });
-    return data;
-  }
-
-  async delete(key: string): Promise<string> {
-    await Prisma.config.delete({
-      where: { key },
-    });
-
-    return key;
-  }
-
-  async upsert({
-    where,
-    update,
-    create,
-  }: {
-    where: Record<string, unknown>;
-    update: Record<string, unknown>;
-    create: Config;
-  }): Promise<Config> {
-    const data = await Prisma.config.upsert({
-      where,
-      update,
-      create,
-    });
-
-    return data;
-  }
-}
+export type ReportNotificationCreate = Omit<reportNotifications, "id">;
