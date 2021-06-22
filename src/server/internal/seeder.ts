@@ -20,26 +20,14 @@
 import { ProjectRepository } from "./../services/projects/repository";
 import { OrganizationRepository } from "./../services/organizations/repository";
 import { UserRepository } from "./../services/users/repository";
-import {
-  MonikaRepository,
-  ReportRepository,
-} from "./../services/monika/repository";
-import { ProbeRepository } from "../services/probes/repository";
-import { ReportRequestRepository } from "./../services/report-requests/repository";
+import { MonikaRepository } from "./../services/monika/repository";
 import { ConfigRepository } from "./../services/config/repository";
-import { ReportRequestAlertRepository } from "../services/report-alerts/repository";
-import { ReportNotificationRepository } from "./../services/report-alerts/repository";
 
 export default async function seed(): Promise<void> {
   const user = new UserRepository();
   const organization = new OrganizationRepository();
   const project = new ProjectRepository();
-  const probe = new ProbeRepository();
   const monika = new MonikaRepository();
-  const report = new ReportRepository();
-  const reportRequest = new ReportRequestRepository();
-  const reportRequestAlerts = new ReportRequestAlertRepository();
-  const reportNotifications = new ReportNotificationRepository();
   const config = new ConfigRepository();
 
   await user.upsert({
@@ -64,84 +52,10 @@ export default async function seed(): Promise<void> {
     organization_id: 1,
   });
 
-  await probe.create({
-    name: "sample-probe",
-    description: "sample-probe",
-    alerts: null,
-    interval: null,
-    incidentThreshold: null,
-    recoveryThreshold: null,
-    enabled: null,
-    requests: [],
-  });
-
   await monika.create({
     hostname: "example.com",
     instanceId: "southeast-asia-1",
   });
-
-  await report.create({
-    monikaId: 1,
-    configVersion: "1.0.0",
-    monikaInstanceId: "southeast-asia-1",
-    data: {
-      requests: [],
-      notifications: [],
-    },
-  });
-
-  await probe.createProbeRequest({
-    probeId: 1,
-    method: "GET",
-    timeout: 10000,
-    headers: null,
-    body: null,
-    url: "http://example.com",
-  });
-
-  const reportRequestsSeed = [];
-  for (let i = 0; i < 35; i++) {
-    reportRequestsSeed[i] = reportRequest.create({
-      reportId: 1,
-      probeId: "sample-probe",
-      probeName: "sample-probe",
-      requestMethod: "GET",
-      requestHeader: null,
-      requestBody: null,
-      requestUrl: "https://example.com",
-      timestamp: 0,
-      responseStatus: 200,
-      responseHeader: null,
-      responseBody: null,
-      responseTime: 3,
-      responseSize: null,
-    });
-  }
-  await Promise.all(reportRequestsSeed);
-
-  const reportRequestsAlertsSeed = [];
-  for (let i = 0; i < 35; i++) {
-    reportRequestsAlertsSeed[i] = reportRequestAlerts.create({
-      reportRequestId: 1,
-      alert: "response-time-greater-than-2-s",
-    });
-  }
-  await Promise.all(reportRequestsAlertsSeed);
-
-  const reportNotificationsSeed = [];
-  for (let i = 0; i < 35; i++) {
-    reportNotificationsSeed[i] = reportNotifications.create({
-      probeName: "sample-probe",
-      timestamp: 0,
-      type: i % 2 === 0 ? "NOTIFY-INCIDENT" : "NOTIFY-RECOVERY",
-      alert: "response-time-greater-than-2-s",
-      reportId: 1,
-      probeId: "sample-probe",
-      notificationId: "sample-notification",
-      channel: "slack",
-    });
-  }
-  await Promise.all(reportNotificationsSeed);
 
   const configs = [
     { key: "env", value: process.env.NODE_ENV || "development" },
